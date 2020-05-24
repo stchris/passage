@@ -1,0 +1,20 @@
+image: debian/testing
+packages:
+  - curl
+sources:
+  - git@git.sr.ht:~stchris/passage
+secrets:
+  - db9755ab-14b1-43ba-82e8-597470a67de9
+tasks:
+  - setup: |
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh
+      sh rustup.sh -y
+  - build_lint: |
+      cd passage
+      source $HOME/.cargo/env
+      cargo check
+      cargo clippy
+  - test: |
+      cd passage
+      source $HOME/.cargo/env
+      cargo test
