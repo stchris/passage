@@ -12,3 +12,4 @@ thiserror = "1.0"
 secrecy = "0.6"
 rpassword = "4.0"
 structopt = {version="0.3.14", features=["color"]}
+lazy_static = "1.4.0"

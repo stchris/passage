@@ -1,14 +1,26 @@
+use std::fs;
 use std::fs::File;
-use std::io::{stdin, stdout, Read, Write};
+use std::io;
+use std::io::{Read, Write};
+use std::path::Path;
 
+use lazy_static::lazy_static;
 use rpassword;
 use secrecy::Secret;
 use structopt::StructOpt;
 use thiserror::Error;
 
+lazy_static! {
+    static ref STORAGE_DIR: String = {
+        let home_dir: String = std::env::var("HOME").unwrap();
+        format!("{}/.local/share/passage/entries", home_dir)
+    };
+}
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "passage", about = "Password manager with age encryption")]
 enum Opt {
+    Init,
     New,
     List,
 }
@@ -20,6 +32,9 @@ enum Error {
 
     #[error(transparent)]
     IOError(#[from] std::io::Error),
+
+    #[error("Environment variable not found")]
+    VariableExpansionError(#[from] std::env::VarError),
 }
 
 fn encrypt(plaintext: Vec<u8>, passphrase: String) -> Result<Vec<u8>, Error> {
@@ -51,30 +66,44 @@ fn decrypt(encrypted: Vec<u8>, passphrase: String) -> Result<Vec<u8>, Error> {
     Ok(decrypted)
 }
 
-fn new_entry() {
+fn new_entry() -> Result<(), Error> {
     print!("Entry> ");
-    stdout().flush().unwrap();
+    io::stdout().flush().unwrap();
     let mut entry = String::new();
-    stdin().read_line(&mut entry).unwrap();
+    io::stdin().read_line(&mut entry).unwrap();
+    let entry = entry.trim();
 
-    let password = b"Hello world!";
-    let passphrase = rpassword::prompt_password_stdout("Password:").unwrap();
+    let password =
+        rpassword::prompt_password_stdout(format!("Password for {}:", entry).as_ref()).unwrap();
+    let passphrase = rpassword::prompt_password_stdout("Enter passphrase:").unwrap();
 
-    match encrypt(password.to_vec(), passphrase) {
+    match encrypt(password.into_bytes(), passphrase) {
         Ok(encrypted) => {
-            let mut file = File::create("foo.txt").unwrap();
+            let mut file = File::create(format!("{}/{}", STORAGE_DIR.clone(), entry)).unwrap();
             file.write_all(&encrypted).unwrap();
         }
         Err(err) => panic!(err),
     };
+    Ok(())
 }
 
-fn list() {}
+fn list() -> Result<(), Error> {
+    for entry in fs::read_dir(STORAGE_DIR.clone())? {
+        println!("{}", entry.unwrap().file_name().to_str().unwrap());
+    }
+    Ok(())
+}
 
-fn main() {
+fn init() -> Result<(), Error> {
+    fs::create_dir_all(Path::new(&STORAGE_DIR.clone()))?;
+    Ok(())
+}
+
+fn main() -> Result<(), Error> {
     let opt = Opt::from_args();
     match opt {
         Opt::New => new_entry(),
         Opt::List => list(),
+        Opt::Init => init(),
     }
 }
