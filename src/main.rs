@@ -1,7 +1,7 @@
 use std::fs;
 use std::fs::File;
 use std::io;
-use std::io::{Read, Write};
+use std::io::{BufReader, Read, Write};
 use std::path::Path;
 
 use lazy_static::lazy_static;
@@ -20,9 +20,14 @@ lazy_static! {
 #[derive(Debug, StructOpt)]
 #[structopt(name = "passage", about = "Password manager with age encryption")]
 enum Opt {
+    /// Initialize the password store
     Init,
+    /// Add a new entry
     New,
+    /// List all known entries
     List,
+    /// Decrypt and show an entry
+    Show { entry: String },
 }
 
 #[derive(Error, Debug)]
@@ -99,11 +104,25 @@ fn init() -> Result<(), Error> {
     Ok(())
 }
 
+fn show(entry: String) -> Result<(), Error> {
+    println!("Showing {}", entry);
+    let mut encrypted: Vec<u8> = vec![];
+    let file = File::open(format!("{}/{}", STORAGE_DIR.clone(), entry)).unwrap();
+    let mut buf = BufReader::new(file);
+    buf.read_to_end(&mut encrypted).unwrap();
+    let passphrase = rpassword::prompt_password_stdout("Enter passphrase:").unwrap();
+    let decrypted = decrypt(encrypted, passphrase).unwrap();
+    println!("{}", String::from_utf8(decrypted).unwrap());
+
+    Ok(())
+}
+
 fn main() -> Result<(), Error> {
     let opt = Opt::from_args();
     match opt {
         Opt::New => new_entry(),
         Opt::List => list(),
         Opt::Init => init(),
+        Opt::Show { entry } => show(entry),
     }
 }
