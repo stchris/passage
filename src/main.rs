@@ -1,3 +1,5 @@
+#![deny(clippy::all)]
+
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -5,7 +7,7 @@ use std::io::{BufReader, Read, Write};
 use std::path::Path;
 
 use lazy_static::lazy_static;
-use rpassword;
+
 use secrecy::Secret;
 use structopt::StructOpt;
 use thiserror::Error;
@@ -33,17 +35,17 @@ enum Opt {
 #[derive(Error, Debug)]
 enum Error {
     #[error(transparent)]
-    AgeError(#[from] age::Error),
+    Age(#[from] age::Error),
 
     #[error(transparent)]
-    IOError(#[from] std::io::Error),
+    IO(#[from] std::io::Error),
 
     #[error("Environment variable not found")]
-    VariableExpansionError(#[from] std::env::VarError),
+    VariableExpansion(#[from] std::env::VarError),
 }
 
 fn encrypt(plaintext: Vec<u8>, passphrase: String) -> Result<Vec<u8>, Error> {
-    let encryptor = age::Encryptor::with_user_passphrase(Secret::new(passphrase.to_owned()));
+    let encryptor = age::Encryptor::with_user_passphrase(Secret::new(passphrase));
 
     let mut encrypted = vec![];
     let mut writer = encryptor.wrap_output(&mut encrypted, age::Format::Binary)?;
@@ -60,7 +62,7 @@ fn decrypt(encrypted: Vec<u8>, passphrase: String) -> Result<Vec<u8>, Error> {
     };
 
     let mut decrypted = vec![];
-    let mut reader = decryptor.decrypt(&Secret::new(passphrase.to_owned()), None)?;
+    let mut reader = decryptor.decrypt(&Secret::new(passphrase), None)?;
     loop {
         let bytes = reader.read_to_end(&mut decrypted).unwrap();
         if bytes == 0 {
