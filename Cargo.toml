@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 age = "0.4"
-thiserror = "1.0"
+anyhow = "1.0"
 secrecy = "0.6"
 rpassword = "4.0"
 structopt = {version="0.3", features=["color"]}

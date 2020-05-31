@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
+#![deny(clippy::pedantic)]
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::panic)]
 
@@ -8,13 +9,12 @@ use std::fs::File;
 use std::io;
 use std::io::{BufReader, Read, Write};
 use std::path::Path;
-use std::string::FromUtf8Error;
 
 use lazy_static::lazy_static;
 
+use anyhow::Error;
 use secrecy::Secret;
 use structopt::StructOpt;
-use thiserror::Error;
 
 lazy_static! {
     static ref STORAGE_DIR: String = {
@@ -34,21 +34,6 @@ enum Opt {
     List,
     /// Decrypt and show an entry
     Show { entry: String },
-}
-
-#[derive(Error, Debug)]
-enum Error {
-    #[error(transparent)]
-    Age(#[from] age::Error),
-
-    #[error(transparent)]
-    IO(#[from] std::io::Error),
-
-    #[error("Environment variable not found")]
-    VariableExpansion(#[from] std::env::VarError),
-
-    #[error(transparent)]
-    oncryption(#[from] FromUtf8Error),
 }
 
 fn encrypt(plaintext: &[u8], passphrase: String) -> Result<Vec<u8>, Error> {
