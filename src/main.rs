@@ -1,7 +1,6 @@
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![deny(clippy::unwrap_used)]
 #![deny(clippy::panic)]
 
 use std::fs;
