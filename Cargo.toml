@@ -6,6 +6,9 @@ edition = "2018"
 description = "A password manager with age encryption"
 license = "MIT"
 repository = "https://www.github.com/stchris/passage"
+readme = "README.md"
+keywords = ["cli", "encryption", "age", "password", "manager"]
+categories = ["command-line-utilities", "cryptography"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
