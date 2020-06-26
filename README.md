@@ -2,6 +2,8 @@
 
 password manager with age encryption
 
+![https://github.com/stchris/passage/actions](https://github.com/stchris/passage/workflows/Tests%20&%20Clippy/badge.svg)
+
 Project in development, *not ready for production use*.
 
 ## Installation
