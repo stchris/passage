@@ -3,6 +3,9 @@ name = "passage"
 version = "0.1.0"
 authors = ["Christian Stefanescu <chris@0chris.com>"]
 edition = "2018"
+description = "A password manager with age encryption"
+license = "MIT"
+repository = "https://www.github.com/stchris/passage"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
