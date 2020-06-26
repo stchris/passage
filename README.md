@@ -10,6 +10,10 @@ This project is in development, *not ready for production use*. A lot of things 
 
 ## Installation
 
+Right now this assumes a rust toolchain is present. As soon as the codebase is more stable I will look into providing binaries.
+
+For now:
+
 ```bash
 $ git clone https://github.com/stchris/passage.git
 $ cargo install --path .
