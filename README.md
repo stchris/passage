@@ -1,13 +1,13 @@
 # passage
 
-password manager with age encryption
+password manager with [age encryption](https://age-encryption.org/)
 
 Project in development, *not ready for production use*.
 
 ## Installation
 
 ```bash
-$ git clone https://git.sr.ht/~stchris/passage
+$ git clone https://github.com/stchris/passage.git
 $ cargo install --path .
 ```
 
