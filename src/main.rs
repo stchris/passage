@@ -37,7 +37,7 @@ enum Opt {
     Show {
         entry: String,
 
-        #[structopt(long)]
+        #[structopt(long, short)]
         /// Print the password instead of copying it to the clipboard
         on_screen: bool,
     },
