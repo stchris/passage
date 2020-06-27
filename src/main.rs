@@ -111,12 +111,11 @@ fn show(entry: &str, on_screen: bool) -> Result<(), Error> {
     let passphrase = rpassword::prompt_password_stdout("Enter passphrase:")?;
     let decrypted = decrypt(&encrypted, passphrase)?;
     let decrypted = String::from_utf8(decrypted)?;
-    match on_screen {
-        true => println!("{}", decrypted),
-        false => {
-            let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-            ctx.set_contents(decrypted.to_owned()).unwrap();
-        }
+    if on_screen {
+        println!("{}", decrypted);
+    } else {
+        let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+        ctx.set_contents(decrypted).unwrap();
     }
 
     Ok(())
