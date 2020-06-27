@@ -6,4 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Documentation updates, including a walkthrough
 - Short option `-o` for `passage show --on-screen`
+- Fix clipboard copying on Linux. A child process is spawned and keeps the content on the clipboard for 10 seconds. See #5
+- Better presentation on crates.io

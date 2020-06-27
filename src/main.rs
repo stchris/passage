@@ -14,6 +14,7 @@ use lazy_static::lazy_static;
 use anyhow::Error;
 use clipboard::ClipboardContext;
 use clipboard::ClipboardProvider;
+use fork::{fork, Fork};
 use secrecy::Secret;
 use structopt::StructOpt;
 
@@ -112,10 +113,20 @@ fn show(entry: &str, on_screen: bool) -> Result<(), Error> {
     let decrypted = decrypt(&encrypted, passphrase)?;
     let decrypted = String::from_utf8(decrypted)?;
     if on_screen {
-        println!("{}", decrypted);
+        println!("{}", decrypted)
     } else {
-        let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-        ctx.set_contents(decrypted).unwrap();
+        match fork() {
+            Ok(Fork::Child) => {
+                let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+                ctx.set_contents(decrypted).unwrap();
+
+                std::thread::sleep(std::time::Duration::from_secs(10));
+
+                ctx.set_contents("".to_owned()).unwrap();
+            }
+            Err(_) => return Err(Error::msg("Failed to fork()")),
+            _ => {}
+        }
     }
 
     Ok(())
