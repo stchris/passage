@@ -54,7 +54,7 @@ fn encrypt(plaintext: &[u8], passphrase: String) -> Result<Vec<u8>, Error> {
     Ok(encrypted)
 }
 
-fn decrypt(encrypted: &[u8], passphrase: String, clipboard: bool) -> Result<Vec<u8>, Error> {
+fn decrypt(encrypted: &[u8], passphrase: String) -> Result<Vec<u8>, Error> {
     let decryptor = match age::Decryptor::new(&encrypted[..])? {
         age::Decryptor::Passphrase(d) => d,
         age::Decryptor::Recipients(..) => unreachable!(),
@@ -67,14 +67,6 @@ fn decrypt(encrypted: &[u8], passphrase: String, clipboard: bool) -> Result<Vec<
         if bytes == 0 {
             break;
         }
-    }
-
-    if clipboard {
-        let mut ctx: ClipboardContext =
-            ClipboardProvider::new().expect("Failed to instantiate clipboard provider");
-        ctx.set_contents(String::from_utf8(decrypted)?)
-            .expect("Failed to copy to clipboard");
-        return Ok(vec![]);
     }
 
     Ok(decrypted)
@@ -117,9 +109,14 @@ fn show(entry: &str, on_screen: bool) -> Result<(), Error> {
     let mut buf = BufReader::new(file);
     buf.read_to_end(&mut encrypted)?;
     let passphrase = rpassword::prompt_password_stdout("Enter passphrase:")?;
-    let decrypted = decrypt(&encrypted, passphrase, !on_screen)?;
-    if on_screen {
-        println!("{}", String::from_utf8(decrypted)?);
+    let decrypted = decrypt(&encrypted, passphrase)?;
+    let decrypted = String::from_utf8(decrypted)?;
+    match on_screen {
+        true => println!("{}", decrypted),
+        false => {
+            let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+            ctx.set_contents(decrypted.to_owned()).unwrap();
+        }
     }
 
     Ok(())
@@ -132,5 +129,19 @@ fn main() -> Result<(), Error> {
         Opt::List => list(),
         Opt::Init => init(),
         Opt::Show { entry, on_screen } => show(&entry, on_screen),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ok() {
+        let text = b"this is plain";
+        let passphrase = "secret";
+        let encrypted = encrypt(text, passphrase.to_string()).unwrap();
+        let decrypted = decrypt(&encrypted, passphrase.to_string()).unwrap();
+        assert_eq!(decrypted, text);
     }
 }
