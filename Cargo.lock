@@ -356,6 +356,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
+name = "fork"
+version = "0.1.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "abe7851370a3546121056109b6e5710686b10cc750d45166153eba0477633491"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -515,6 +524,7 @@ dependencies = [
  "age",
  "anyhow",
  "clipboard",
+ "fork",
  "lazy_static",
  "rpassword",
  "secrecy",
