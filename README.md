@@ -16,6 +16,10 @@ For now:
 
 ```bash
 $ git clone https://github.com/stchris/passage.git
+
+# Dependencies for Debian / Ubuntu
+$ apt install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+
 $ cargo install --path .
 ```
 
