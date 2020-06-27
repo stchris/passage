@@ -5,8 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [0.1.1] - 2020-06-28
 ### Added
 - Documentation updates, including a walkthrough
 - Short option `-o` for `passage show --on-screen`
 - Fix clipboard copying on Linux. A child process is spawned and keeps the content on the clipboard for 10 seconds. See #5
 - Better presentation on crates.io
+
+## [0.1.0] - 2020-06-26
