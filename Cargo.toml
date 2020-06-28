@@ -1,6 +1,6 @@
 [package]
 name = "passage"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Christian Stefanescu <chris@0chris.com>"]
 edition = "2018"
 description = "A password manager with age encryption"
