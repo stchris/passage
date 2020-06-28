@@ -28,9 +28,9 @@ $ cargo install --path .
 
 `passage` creates a storage folder, whose current default depends on the OS family, for a given username `user`:
 
-Linux: `/home/user/.local/share/passage/`
-mac OS: `/Users/user/Library/Application Support/`
-Windows: `C:\Users\user\AppData\Roaming\passage\data`
+    Linux: `/home/user/.local/share/passage/`
+    mac OS: `/Users/user/Library/Application Support/`
+    Windows: `C:\Users\user\AppData\Roaming\passage\data`
 
 You can create this folder by running `passage init` once.
 
