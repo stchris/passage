@@ -61,7 +61,7 @@ $ passage show --on-screen email # the password is printed to the console
 
 ```bash
 $ passage
-passage 0.1.0
+passage 0.2.0
 Password manager with age encryption
 
 USAGE:
@@ -73,6 +73,7 @@ FLAGS:
 
 SUBCOMMANDS:
     help    Prints this message or the help of the given subcommand(s)
+    info    Print status information
     init    Initialize the password store
     list    List all known entries
     new     Add a new entry

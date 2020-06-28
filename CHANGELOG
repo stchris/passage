@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2020-06-29
+### Added
+- Now relying on the [directories](https://crates.io/crates/directories) crate to provide a cross-platform default storage directory location
+- `passage info` displays the storage folder in use
+
+## [0.1.2] - 2020-06-28
 ### Changed
 - Copying to clipboard uses fork only on Linux
 
