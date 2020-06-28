@@ -14,7 +14,6 @@ use lazy_static::lazy_static;
 use anyhow::Error;
 use clipboard::ClipboardContext;
 use clipboard::ClipboardProvider;
-use fork::{fork, Fork};
 use secrecy::Secret;
 use structopt::StructOpt;
 
@@ -104,6 +103,37 @@ fn init() -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg(target_os = "linux")]
+use fork::{fork, Fork};
+
+#[cfg(target_os = "linux")]
+fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
+    match fork() {
+        Ok(Fork::Child) => {
+            let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+            ctx.set_contents(decrypted).unwrap();
+
+            std::thread::sleep(std::time::Duration::from_secs(10));
+
+            ctx.set_contents("".to_owned()).unwrap();
+        }
+        Err(_) => return Err(Error::msg("Failed to fork()")),
+        _ => {}
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "linux"))]
+fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
+    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+    ctx.set_contents(decrypted).unwrap();
+
+    std::thread::sleep(std::time::Duration::from_secs(10));
+
+    ctx.set_contents("".to_owned()).unwrap();
+    Ok(())
+}
+
 fn show(entry: &str, on_screen: bool) -> Result<(), Error> {
     let mut encrypted: Vec<u8> = vec![];
     let file = File::open(format!("{}/{}", STORAGE_DIR.clone(), entry))?;
@@ -115,18 +145,7 @@ fn show(entry: &str, on_screen: bool) -> Result<(), Error> {
     if on_screen {
         println!("{}", decrypted)
     } else {
-        match fork() {
-            Ok(Fork::Child) => {
-                let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-                ctx.set_contents(decrypted).unwrap();
-
-                std::thread::sleep(std::time::Duration::from_secs(10));
-
-                ctx.set_contents("".to_owned()).unwrap();
-            }
-            Err(_) => return Err(Error::msg("Failed to fork()")),
-            _ => {}
-        }
+        copy_to_clipbpard(decrypted)?;
     }
 
     Ok(())
