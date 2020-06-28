@@ -26,10 +26,13 @@ $ cargo install --path .
 
 ## Walkthrough
 
-`passage` assumes a storage folder, whose current default is `~/.local/share/passage/entries/`. You can create this folder by running `passage init` once.
+`passage` creates a storage folder, whose current default depends on the OS family, for a given username `user`:
 
+Linux: `/home/user/.local/share/passage/`
+mac OS: `/Users/user/Library/Application Support/`
+Windows: `C:\Users\user\AppData\Roaming\passage\data`
 
-> Note: this might not work on Windows and will be adressed by [Issue #3](https://github.com/stchris/passage/issues/3).
+You can create this folder by running `passage init` once.
 
 Now let's create a new entry with `$ passage new`:
 
