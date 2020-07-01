@@ -1,7 +1,10 @@
 #![forbid(unsafe_code)]
-#![deny(clippy::all)]
+#![deny(clippy::cargo)]
 #![deny(clippy::pedantic)]
+#![deny(clippy::nursery)]
 #![deny(clippy::panic)]
+#![deny(clippy::unwrap_used)]
+#![allow(clippy::multiple_crate_versions)]
 
 use std::fs;
 use std::fs::File;
@@ -52,7 +55,7 @@ fn encrypt(plaintext: &[u8], passphrase: String) -> Result<Vec<u8>, Error> {
 
     let mut encrypted = vec![];
     let mut writer = encryptor.wrap_output(&mut encrypted, age::Format::Binary)?;
-    writer.write_all(&plaintext)?;
+    writer.write_all(plaintext)?;
     writer.finish()?;
 
     Ok(encrypted)
