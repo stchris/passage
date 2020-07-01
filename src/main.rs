@@ -156,7 +156,11 @@ fn show(entry: &str, on_screen: bool) -> Result<(), Error> {
 }
 
 fn info() -> Result<()> {
-    println!("Storage folder: {}", storage_dir()?.display());
+    if storage_dir()?.exists() {
+        println!("Storage folder: {}", storage_dir()?.display());
+    } else {
+        println!("Storage folder doesn't exist yet, run `passage init` to create it");
+    }
     Ok(())
 }
 

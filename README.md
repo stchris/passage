@@ -32,7 +32,12 @@ $ cargo install --path .
     mac OS: `/Users/user/Library/Application Support/`
     Windows: `C:\Users\user\AppData\Roaming\passage\data`
 
-You can create this folder by running `passage init` once.
+You can create this folder by running `passage init` once. Check the path to the storage folder at any time with `passage info`:
+
+```
+$ passage info
+Storage folder: /home/chris/.local/share/passage/entries
+```
 
 Now let's create a new entry with `$ passage new`:
 
