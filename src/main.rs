@@ -114,12 +114,15 @@ use fork::{fork, Fork};
 fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
     match fork() {
         Ok(Fork::Child) => {
-            let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-            ctx.set_contents(decrypted).unwrap();
+            let mut ctx: ClipboardContext = ClipboardProvider::new()
+                .map_err(|e| anyhow!("failed to initialize clipboard provider: {}", e))?;
+            ctx.set_contents(decrypted)
+                .map_err(|e| anyhow!("failed to copy to clipboard: {}", e))?;
 
             std::thread::sleep(std::time::Duration::from_secs(10));
 
-            ctx.set_contents("".to_owned()).unwrap();
+            ctx.set_contents("".to_owned())
+                .map_err(|e| anyhow!("failed to copy to clipboard: {}", e))?;
         }
         Err(_) => return Err(Error::msg("Failed to fork()")),
         _ => {}
@@ -129,12 +132,10 @@ fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
 
 #[cfg(not(target_os = "linux"))]
 fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
-    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-    ctx.set_contents(decrypted).unwrap();
-
-    std::thread::sleep(std::time::Duration::from_secs(10));
-
-    ctx.set_contents("".to_owned()).unwrap();
+    let mut ctx: ClipboardContext = ClipboardProvider::new()
+        .map_err(|e| anyhow!("failed to initialize clipboard provider: {}", e))?;
+    ctx.set_contents(decrypted)
+        .map_err(|e| anyhow!("failed to copy to clipboard: {}", e))?;
     Ok(())
 }
 
