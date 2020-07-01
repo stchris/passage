@@ -38,7 +38,11 @@ enum Opt {
 
 fn storage_dir() -> Result<std::path::PathBuf> {
     match ProjectDirs::from("", "", "passage") {
-        Some(pd) => Ok(pd.data_dir().to_owned()),
+        Some(pd) => {
+            let mut storage_dir = pd.data_dir().to_owned();
+            storage_dir.push("entries");
+            Ok(storage_dir)
+        }
         None => Err(anyhow!("couldn't determine project storage folder")),
     }
 }
