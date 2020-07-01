@@ -3,7 +3,6 @@
 #![deny(clippy::pedantic)]
 #![deny(clippy::nursery)]
 #![deny(clippy::panic)]
-#![deny(clippy::unwrap_used)]
 #![allow(clippy::multiple_crate_versions)]
 
 use std::fs;
