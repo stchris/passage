@@ -37,8 +37,8 @@ jobs:
           override: true
 
       - name: Install linux build dependencies
-        run: ${{ matrix.build_deps }}
-        if: matrix.build_deps != ''
+        run: ${{ matrix.deps }}
+        if: matrix.deps != ''
 
       - name: cargo build
         uses: actions-rs/cargo@v1
@@ -101,8 +101,8 @@ jobs:
           args: cargo-deb
 
       - name: Install build dependencies
-        run: ${{ matrix.build_deps }}
-        if: matrix.build_deps != ''
+        run: ${{ matrix.deps }}
+        if: matrix.deps != ''
 
       - name: cargo build
         run: cargo build --release --locked --target ${{ matrix.target }} ${{ matrix.build_flags }}
