@@ -79,14 +79,14 @@ fn decrypt(encrypted: &[u8], passphrase: String) -> Result<Vec<u8>, Error> {
 }
 
 fn new_entry() -> Result<(), Error> {
-    print!("Entry> ");
+    print!("Entry: ");
     io::stdout().flush()?;
     let mut entry = String::new();
     io::stdin().read_line(&mut entry)?;
     let entry = entry.trim();
 
-    let password = rpassword::prompt_password_stdout(format!("Password for {}:", entry).as_ref())?;
-    let passphrase = rpassword::prompt_password_stdout("Enter passphrase:")?;
+    let password = rpassword::prompt_password_stdout(format!("Password for {}: ", entry).as_ref())?;
+    let passphrase = rpassword::prompt_password_stdout("Passphrase: ")?;
 
     let encrypted = encrypt(&password.into_bytes(), passphrase)?;
     let mut file = File::create(format!("{}/{}", storage_dir()?.display(), entry))?;
