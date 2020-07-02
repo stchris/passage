@@ -104,15 +104,10 @@ jobs:
         run: ${{ matrix.deps }}
         if: matrix.deps != ''
 
-      - name: cargo build
-        run: cargo build --release --locked --target ${{ matrix.target }} ${{ matrix.build_flags }}
-        working-directory: ./passage
-
       - name: cargo deb
         uses: actions-rs/cargo@v1
         with:
           command: deb
-          args: --no-build --target ${{ matrix.target }}
 
       - name: Upload Debian package to release
         uses: svenstaro/upload-release-action@v1-release
