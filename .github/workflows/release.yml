@@ -113,6 +113,26 @@ jobs:
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/debian/*.deb
+          file: target/debian/*.deb
           tag: ${{ github.ref }}
           file_glob: true
+
+
+  cratesio:
+    name: crates.io
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install build dependencies
+        run: sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+
+      - name: cargo publish
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish --token ${{ secrets.CRATES_TOKEN }}
