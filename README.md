@@ -42,14 +42,14 @@ Storage folder: /home/chris/.local/share/passage/entries
 Now let's create a new entry with `$ passage new`:
 
 ```
-Entry> email
+Entry: email
 Password for email:
-Enter passphrase:
+Passphrase:
 ```
 
 So here we are prompted for three things:
 
-* `entry` is the name of the entry we want to create
+* `Entry` is the name of the entry we want to create
 * `Password for <entry>` is the password we want to store
 * `passphrase` is the secret we want to encrypt the password with
 
