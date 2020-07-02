@@ -1,28 +1,123 @@
-name: release
+name: Release
 
-on: release
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
-  build-docker-image:
-    name: Build and upload deb
-    runs-on: ubuntu-latest
-    steps:
-      - name: Pull source
-        uses: actions/checkout@v2
+  build:
+    name: Publish for ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        name: [linux, windows, macos]
+        include:
+          - name: linux
+            os: ubuntu-latest
+            deps: sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+            archive_name: passage.tar.gz
+            asset_suffix: x86_64-linux.tar.gz
 
-      - name: Build deb
-        uses: actions-rs/toolchain@v1
+          - name: windows
+            os: windows-latest
+            archive_name: passage.zip
+            asset_suffix: x86_64-windows.zip
+
+          - name: macos
+            os: macos-latest
+            archive_name: passage.tar.gz
+            asset_suffix: x86_64-darwin.tar.gz
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
           override: true
-      - run: |
-          cargo install cargo-deb
-          cargo-deb
 
-      - name: Upload to release
-        uses: JasonEtco/upload-to-release@master
+      - name: Install linux build dependencies
+        run: ${{ matrix.build_deps }}
+        if: matrix.build_deps != ''
+
+      - name: cargo build
+        uses: actions-rs/cargo@v1
         with:
-          args: target/debian/*.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          command: build
+          args: --all --release --locked ${{ matrix.build_flags }}
+
+      - name: Create archive
+        run: |
+          mkdir -p release/passage
+          mv target/${{ matrix.target }}/release/passage* release/passage/
+          rm release/passage/*.d
+          tar czf ${{ matrix.archive_name }} -C release/ passage/
+        if: matrix.name != 'windows'
+
+      - name: Create archive [Windows]
+        run: |
+          mkdir -p release/passage
+          mv target/release/passage.exe release/passage/
+          cd release/
+          7z.exe a ../${{ matrix.archive_name }} passage/
+        shell: bash
+        if: matrix.name == 'windows'
+
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+
+      - name: Upload archive to release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ matrix.archive_name }}
+          asset_name: passage-${{ steps.get_version.outputs.VERSION }}-${{ matrix.asset_suffix }}
+          tag: ${{ github.ref }}
+
+  deb:
+    name: Debian ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        name: [linux, armv7, arm64]
+        include:
+          - name: linux
+            target: x86_64-unknown-linux-gnu
+            deps: sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Add target
+        run: rustup target add ${{ matrix.target }}
+      - name: cargo install cargo-deb
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-deb
+
+      - name: Install build dependencies
+        run: ${{ matrix.build_deps }}
+        if: matrix.build_deps != ''
+
+      - name: cargo build
+        run: cargo build --release --locked --target ${{ matrix.target }} ${{ matrix.build_flags }}
+        working-directory: ./passage
+
+      - name: cargo deb
+        uses: actions-rs/cargo@v1
+        with:
+          command: deb
+          args: --no-build --target ${{ matrix.target }}
+
+      - name: Upload Debian package to release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/debian/*.deb
+          tag: ${{ github.ref }}
+          file_glob: true
