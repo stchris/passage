@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        name: [linux, armv7, arm64]
+        name: [linux]
         include:
           - name: linux
             target: x86_64-unknown-linux-gnu
