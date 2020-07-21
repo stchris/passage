@@ -24,4 +24,4 @@ directories = "3.0"
 
 
 [target.'cfg(unix)'.dependencies]
-fork = "0.1.15"
+fork = "0.1.17"
