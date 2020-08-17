@@ -85,6 +85,20 @@ fn new_entry() -> Result<(), Error> {
     io::stdin().read_line(&mut entry)?;
     let entry = entry.trim();
 
+    // check if entry already exists
+    for e in fs::read_dir(storage_dir()?)? {
+        if e?.file_name().to_str().unwrap_or("") == entry {
+            print!("'{}' already exists. Overwrite (y/N)? ", entry);
+            io::stdout().flush()?;
+            let mut overwrite = String::new();
+            io::stdin().read_line(&mut overwrite)?;
+            let overwrite = overwrite.trim();
+            if overwrite.to_uppercase() != "Y" {
+                return Ok(());
+            }
+        }
+    }
+
     let password = rpassword::prompt_password_stdout(format!("Password for {}: ", entry).as_ref())?;
     let passphrase = rpassword::prompt_password_stdout("Passphrase: ")?;
 
