@@ -127,7 +127,7 @@ fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
                 .map_err(|e| anyhow!("failed to copy to clipboard: {}", e))?;
         }
         Err(_) => return Err(Error::msg("Failed to fork()")),
-        _ => {}
+        Ok(_) => {}
     }
     Ok(())
 }
