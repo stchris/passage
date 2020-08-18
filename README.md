@@ -11,9 +11,12 @@ This project is in development, not ready for serious use. A lot of things might
 
 ## Installation
 
-Right now this assumes a rust toolchain is present. As soon as the codebase is more stable I will look into providing binaries.
+### Binaries and packages (preferred)
 
-For now:
+The [release page](https://github.com/stchris/passage/releases) includes binaries for Linux, mac OS and Windows as well as `deb` files for Debian / Ubuntu.
+
+### Build from source (for development)
+With a rust toolchain present, you could do this (which makes sense if you want to contribute):
 
 ```bash
 $ git clone https://github.com/stchris/passage.git
