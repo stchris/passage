@@ -34,13 +34,20 @@ impl Storage {
         Self { entries: vec![] }
     }
 
-    fn write(&self) -> Result<()> {
-        let file = File::create(format!("{}/{}", storage_dir()?.display(), "storage"))?;
-        Ok(bincode::serialize_into(file, &self.entries)?)
+    fn write(&self, passphrase: String) -> Result<()> {
+        let buf: Vec<u8> = vec![];
+        bincode::serialize_into(buf, &self.entries)?;
+        let bytes = encrypt(&buf, passphrase)?;
+        let mut file = File::create(format!("{}/{}", storage_dir()?.display(), "storage"))?;
+        Ok(file.write_all(&bytes)?)
     }
 
-    fn load(&mut self) -> Result<()> {
-        let file = File::create(format!("{}/{}", storage_dir()?.display(), "storage"))?;
+    fn load(&mut self, passphrase: String) -> Result<()> {
+        let mut buf: Vec<u8> = vec![];
+        let mut file = File::create(format!("{}/{}", storage_dir()?.display(), "storage"))?;
+        file.read_to_end(&mut buf)?;
+        let bytes = buf.clone();
+        decrypt(&bytes, passphrase)?;
         self.entries = bincode::deserialize_from(file)?;
         Ok(())
     }
@@ -250,6 +257,19 @@ mod tests {
             password: "world".to_string(),
         });
         assert_eq!(storage.exists("hello"), true);
-        storage.write().expect("Ooop");
+    }
+
+    #[test]
+    fn test_storage_write_load() {
+        let mut storage = Storage::new();
+        storage.add(Entry {
+            name: "123".to_string(),
+            password: "123".to_string(),
+        });
+        storage.write("secret".to_string()).unwrap();
+
+        let mut storage2 = Storage::new();
+        storage2.load("secret".to_string()).unwrap();
+        assert_eq!(storage2.exists("123"), true);
     }
 }
