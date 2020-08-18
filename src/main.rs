@@ -15,7 +15,44 @@ use clipboard::ClipboardContext;
 use clipboard::ClipboardProvider;
 use directories::ProjectDirs;
 use secrecy::Secret;
+use serde::{Deserialize, Serialize};
 use structopt::StructOpt;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Entry {
+    name: String,
+    password: String,
+}
+
+#[derive(Debug)]
+struct Storage {
+    entries: Vec<Entry>,
+}
+
+impl Storage {
+    const fn new() -> Self {
+        Self { entries: vec![] }
+    }
+
+    fn write(&self) -> Result<()> {
+        let file = File::create(format!("{}/{}", storage_dir()?.display(), "storage"))?;
+        Ok(bincode::serialize_into(file, &self.entries)?)
+    }
+
+    fn load(&mut self) -> Result<()> {
+        let file = File::create(format!("{}/{}", storage_dir()?.display(), "storage"))?;
+        self.entries = bincode::deserialize_from(file)?;
+        Ok(())
+    }
+
+    fn add(&mut self, e: Entry) {
+        self.entries.push(e);
+    }
+
+    fn exists(&self, name: &str) -> bool {
+        self.entries.iter().filter(|e| e.name == name).count() > 0
+    }
+}
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "passage", about = "Password manager with age encryption")]
@@ -197,11 +234,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_ok() {
+    fn test_encrypt_cycle() {
         let text = b"this is plain";
         let passphrase = "secret";
         let encrypted = encrypt(text, passphrase.to_string()).unwrap();
         let decrypted = decrypt(&encrypted, passphrase.to_string()).unwrap();
         assert_eq!(decrypted, text);
+    }
+
+    #[test]
+    fn test_storage() {
+        let mut storage = Storage::new();
+        storage.add(Entry {
+            name: "hello".to_string(),
+            password: "world".to_string(),
+        });
+        assert_eq!(storage.exists("hello"), true);
+        storage.write().expect("Ooop");
     }
 }

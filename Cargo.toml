@@ -21,6 +21,8 @@ structopt = {version="0.3", features=["color"]}
 lazy_static = "1.4"
 clipboard = "0.5"
 directories = "3.0"
+serde = {version = "1.0", features=["derive"]}
+bincode = "1.3"
 
 
 [target.'cfg(unix)'.dependencies]
