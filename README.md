@@ -7,7 +7,7 @@ password manager with [age encryption](https://age-encryption.org/)
 
 ## Use with care
 
-This project is in development, not ready for serious use. A lot of things might change, especially regarding the storage format which right now has one big downside: it leaks entry names.
+This project is in development, not ready for serious use. Things might break. That being said, please use it and report any issues.
 
 ## Installation
 
@@ -29,32 +29,32 @@ $ cargo install --path .
 
 ## Walkthrough
 
-`passage` creates a storage folder, whose current default depends on the OS family, for a given username `user`:
+`passage` creates an age-encrypted storage file, whose current default location depends on the OS family, for a given username `user`:
 
-    Linux: `/home/user/.local/share/passage/`
-    mac OS: `/Users/user/Library/Application Support/`
-    Windows: `C:\Users\user\AppData\Roaming\passage\data`
+    Linux: `/home/user/.local/share/passage/entries.toml.age`
+    mac OS: `/Users/user/Library/Application Support/entries.toml.age`
+    Windows: `C:\Users\user\AppData\Roaming\passage\data\entries.toml.age`
 
-You can create this folder by running `passage init` once. Check the path to the storage folder at any time with `passage info`:
+You can create this file by running `passage init` once. Check the path to the storage folder at any time with `passage info`:
 
 ```
 $ passage info
-Storage folder: /home/chris/.local/share/passage/entries
+Storage folder: /home/chris/.local/share/passage/entries.toml.age
 ```
 
 Now let's create a new entry with `$ passage new`:
 
 ```
-Entry: email
-Password for email:
 Passphrase:
+New Entry: email
+Password for email:
 ```
 
 So here we are prompted for three things:
 
-* `Entry` is the name of the entry we want to create
+* `Passphrase` is the secret we want to encrypt the password with
+* `New Entry` is the name of the entry we want to create
 * `Password for <entry>` is the password we want to store
-* `passphrase` is the secret we want to encrypt the password with
 
 Now `passage list` should show one entry (`email`) and we can decrypt this with either:
 
@@ -74,7 +74,6 @@ $ passage show --on-screen email # the password is printed to the console
 $ passage
 passage 0.3.0
 Password manager with age encryption
-
 USAGE:
     passage <SUBCOMMAND>
 
@@ -84,7 +83,7 @@ FLAGS:
 
 SUBCOMMANDS:
     help    Prints this message or the help of the given subcommand(s)
-    info    Print status information
+    info    Display status information
     init    Initialize the password store
     list    List all known entries
     new     Add a new entry
