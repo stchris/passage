@@ -8,14 +8,30 @@
 use std::fs;
 use std::fs::File;
 use std::io;
-use std::io::{BufReader, Read, Write};
+use std::path::Path;
+use std::{
+    collections::HashMap,
+    io::{BufReader, Read, Write},
+};
 
 use anyhow::{anyhow, Error, Result};
 use clipboard::ClipboardContext;
 use clipboard::ClipboardProvider;
 use directories::ProjectDirs;
 use secrecy::Secret;
+use serde::{Deserialize, Serialize};
 use structopt::StructOpt;
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Storage {
+    #[serde(flatten)]
+    entries: HashMap<String, Entry>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Entry {
+    password: String,
+}
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "passage", about = "Password manager with age encryption")]
@@ -38,19 +54,27 @@ enum Opt {
     Info,
 }
 
-fn storage_dir() -> Result<std::path::PathBuf> {
+/// Returns the path to the storage folder containing the `entries_file`
+fn storage_dir() -> Result<String> {
     match ProjectDirs::from("", "", "passage") {
         Some(pd) => {
-            let mut storage_dir = pd.data_dir().to_owned();
-            storage_dir.push("entries");
-            Ok(storage_dir)
+            let dir = pd.data_dir().display().to_string();
+            Ok(dir)
         }
         None => Err(anyhow!("couldn't determine project storage folder")),
     }
 }
 
-fn encrypt(plaintext: &[u8], passphrase: String) -> Result<Vec<u8>, Error> {
-    let encryptor = age::Encryptor::with_user_passphrase(Secret::new(passphrase));
+/// Returns the path to the entries.toml.age file
+fn entries_file() -> Result<String> {
+    Ok(Path::new(&storage_dir()?)
+        .join("entries.toml.age")
+        .display()
+        .to_string())
+}
+
+fn encrypt(plaintext: &[u8], passphrase: Secret<String>) -> Result<Vec<u8>, Error> {
+    let encryptor = age::Encryptor::with_user_passphrase(passphrase);
 
     let mut encrypted = vec![];
     let mut writer = encryptor.wrap_output(&mut encrypted, age::Format::Binary)?;
@@ -60,14 +84,14 @@ fn encrypt(plaintext: &[u8], passphrase: String) -> Result<Vec<u8>, Error> {
     Ok(encrypted)
 }
 
-fn decrypt(encrypted: &[u8], passphrase: String) -> Result<Vec<u8>, Error> {
+fn decrypt(encrypted: &[u8], passphrase: &Secret<String>) -> Result<Vec<u8>, Error> {
     let decryptor = match age::Decryptor::new(&encrypted[..])? {
         age::Decryptor::Passphrase(d) => d,
         age::Decryptor::Recipients(..) => unreachable!(),
     };
 
     let mut decrypted = vec![];
-    let mut reader = decryptor.decrypt(&Secret::new(passphrase), None)?;
+    let mut reader = decryptor.decrypt(passphrase, None)?;
     loop {
         let bytes = reader.read_to_end(&mut decrypted)?;
         if bytes == 0 {
@@ -78,48 +102,82 @@ fn decrypt(encrypted: &[u8], passphrase: String) -> Result<Vec<u8>, Error> {
     Ok(decrypted)
 }
 
+fn load_entries(passphrase: &Secret<String>) -> Result<Storage> {
+    let mut encrypted: Vec<u8> = vec![];
+    let file = match fs::metadata(entries_file()?) {
+        Ok(_) => File::open(entries_file()?)?,
+        Err(_) => File::create(entries_file()?)?,
+    };
+    let mut buf = BufReader::new(file);
+    buf.read_to_end(&mut encrypted)?;
+    if let 0 = encrypted.len() {
+        Ok(Storage {
+            entries: HashMap::new(),
+        })
+    } else {
+        let decrypted = decrypt(&encrypted, passphrase)?;
+        let decrypted = String::from_utf8(decrypted)?;
+        let decrypted: Storage = toml::from_str(&decrypted)?;
+        Ok(decrypted)
+    }
+}
+
+fn save_entries(passphrase: Secret<String>, storage: &Storage) -> Result<()> {
+    let bytes: Vec<u8> = toml::to_vec(&storage)?;
+    let encrypted = encrypt(&bytes, passphrase)?;
+    let mut file = File::create(entries_file()?)?;
+    file.write_all(&encrypted)?;
+    Ok(())
+}
+
 fn new_entry() -> Result<(), Error> {
-    print!("Entry: ");
+    let passphrase = Secret::new(rpassword::prompt_password_stdout("Passphrase: ")?);
+    let mut storage = load_entries(&passphrase)?;
+
+    print!("New entry: ");
     io::stdout().flush()?;
     let mut entry = String::new();
     io::stdin().read_line(&mut entry)?;
     let entry = entry.trim();
 
-    // check if entry already exists
-    for e in fs::read_dir(storage_dir()?)? {
-        if e?.file_name().to_str().unwrap_or("") == entry {
-            print!("'{}' already exists. Overwrite (y/N)? ", entry);
-            io::stdout().flush()?;
-            let mut overwrite = String::new();
-            io::stdin().read_line(&mut overwrite)?;
-            let overwrite = overwrite.trim();
-            if overwrite.to_uppercase() != "Y" {
-                return Ok(());
-            }
+    if storage.entries.contains_key(entry) {
+        print!("'{}' already exists. Overwrite (y/N)? ", entry);
+        io::stdout().flush()?;
+        let mut overwrite = String::new();
+        io::stdin().read_line(&mut overwrite)?;
+        let overwrite = overwrite.trim();
+        if overwrite.to_uppercase() != "Y" {
+            return Ok(());
         }
     }
 
     let password = rpassword::prompt_password_stdout(format!("Password for {}: ", entry).as_ref())?;
-    let passphrase = rpassword::prompt_password_stdout("Passphrase: ")?;
+    storage
+        .entries
+        .entry(entry.to_owned())
+        .or_insert(Entry { password });
 
-    let encrypted = encrypt(&password.into_bytes(), passphrase)?;
-    let mut file = File::create(format!("{}/{}", storage_dir()?.display(), entry))?;
-    file.write_all(&encrypted)?;
-    Ok(())
+    save_entries(passphrase, &storage)
 }
 
 fn list() -> Result<(), Error> {
-    for entry in fs::read_dir(storage_dir()?)? {
-        println!(
-            "{}",
-            entry?.file_name().to_str().expect("Failed to decode entry")
-        );
+    let passphrase = Secret::new(rpassword::prompt_password_stdout("Enter passphrase:")?);
+    let storage = load_entries(&passphrase)?;
+    for name in storage.entries.keys() {
+        println!("{}", name);
     }
     Ok(())
 }
 
 fn init() -> Result<(), Error> {
     fs::create_dir_all(storage_dir()?)?;
+    let path = entries_file()?;
+    if fs::metadata(path).is_err() {
+        File::create(entries_file()?)?;
+        let passphrase = Secret::new(rpassword::prompt_password_stdout("Passphrase: ")?);
+        let entries: Storage = toml::from_str("")?;
+        save_entries(passphrase, &entries)?
+    }
     Ok(())
 }
 
@@ -155,28 +213,29 @@ fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
     Ok(())
 }
 
-fn show(entry: &str, on_screen: bool) -> Result<(), Error> {
-    let mut encrypted: Vec<u8> = vec![];
-    let file = File::open(format!("{}/{}", storage_dir()?.display(), entry))?;
-    let mut buf = BufReader::new(file);
-    buf.read_to_end(&mut encrypted)?;
-    let passphrase = rpassword::prompt_password_stdout("Enter passphrase:")?;
-    let decrypted = decrypt(&encrypted, passphrase)?;
-    let decrypted = String::from_utf8(decrypted)?;
-    if on_screen {
-        println!("{}", decrypted)
+fn show(entry: &str, on_screen: bool) -> Result<()> {
+    let passphrase = Secret::new(rpassword::prompt_password_stdout("Enter passphrase:")?);
+    let storage = load_entries(&passphrase)?;
+    if storage.entries.contains_key(entry) {
+        let password = &storage.entries.get(entry).unwrap().password;
+        if on_screen {
+            println!("{}", password);
+        } else {
+            copy_to_clipbpard(password.to_string())?;
+        }
     } else {
-        copy_to_clipbpard(decrypted)?;
+        return Err(anyhow!("{} not found", entry));
     }
 
     Ok(())
 }
 
 fn info() -> Result<()> {
-    if storage_dir()?.exists() {
-        println!("Storage folder: {}", storage_dir()?.display());
+    let path = entries_file()?;
+    if fs::metadata(path.clone()).is_ok() {
+        println!("Storage file: {}", path);
     } else {
-        println!("Storage folder doesn't exist yet, run `passage init` to create it");
+        println!("Storage file doesn't exist yet, run `passage init` to create it");
     }
     Ok(())
 }
@@ -199,9 +258,15 @@ mod tests {
     #[test]
     fn test_ok() {
         let text = b"this is plain";
-        let passphrase = "secret";
-        let encrypted = encrypt(text, passphrase.to_string()).unwrap();
-        let decrypted = decrypt(&encrypted, passphrase.to_string()).unwrap();
+        let passphrase = Secret::new("secret".to_string());
+        let encrypted = encrypt(text, passphrase.clone()).unwrap();
+        let decrypted = decrypt(&encrypted, &passphrase).unwrap();
         assert_eq!(decrypted, text);
+    }
+
+    #[test]
+    fn test_entry_serialization() {
+        let s: Storage = toml::from_str("[foo] \n password = 'bar'").unwrap();
+        assert_eq!(s.entries.get("foo").unwrap().password, "bar");
     }
 }
