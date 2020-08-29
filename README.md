@@ -72,7 +72,7 @@ $ passage show --on-screen email # the password is printed to the console
 
 ```bash
 $ passage
-passage 0.2.0
+passage 0.3.0
 Password manager with age encryption
 
 USAGE:

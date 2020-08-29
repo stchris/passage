@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- BREAKING CHANGE: Storage format changed to TOML
+The password storage is no longer in individual age-encrypted files, but in a single toml file encrypted with a passphrase. If you have existing password entries in the old storage format they will not be automatically migrated, but the old version of passage (or age) will be able to decrypt them.
 
 ## [0.2.2] - 2020-08-17
 ### Changed
