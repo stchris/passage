@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+# possible event: new_entry
+
+git commit -m "updated entry" entries.toml.age
+git push origin main
