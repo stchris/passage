@@ -9,6 +9,7 @@ use std::fs;
 use std::fs::File;
 use std::io;
 use std::path::Path;
+use std::process::Command;
 use std::{
     collections::HashMap,
     io::{BufReader, Read, Write},
@@ -31,6 +32,38 @@ struct Storage {
 #[derive(Debug, Deserialize, Serialize)]
 struct Entry {
     password: String,
+}
+
+/// Represents callable scripts which can be triggered at certain times
+enum Hook {
+    PreLoad,
+    PostSave,
+}
+
+impl Hook {
+    fn name(&self) -> String {
+        match *self {
+            Self::PreLoad => "pre_load".to_string(),
+            Self::PostSave => "post_save".to_string(),
+        }
+    }
+}
+/// Represents events which can trigger hooks
+#[derive(Debug)]
+enum HookEvent {
+    NewEntry,
+    ListEntries,
+    ShowEntry,
+}
+
+impl HookEvent {
+    fn name(&self) -> String {
+        match *self {
+            Self::NewEntry => "new_entry".to_string(),
+            Self::ListEntries => "list_entries".to_string(),
+            Self::ShowEntry => "show_entry".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, StructOpt)]
@@ -69,6 +102,14 @@ fn storage_dir() -> Result<String> {
 fn entries_file() -> Result<String> {
     Ok(Path::new(&storage_dir()?)
         .join("entries.toml.age")
+        .display()
+        .to_string())
+}
+
+/// Returns the path toth the hooks directory
+fn hooks_dir() -> Result<String> {
+    Ok(Path::new(&storage_dir()?)
+        .join("hooks")
         .display()
         .to_string())
 }
@@ -131,6 +172,7 @@ fn save_entries(passphrase: Secret<String>, storage: &Storage) -> Result<()> {
 }
 
 fn new_entry() -> Result<(), Error> {
+    run_hook(&Hook::PreLoad, &HookEvent::NewEntry)?;
     let passphrase = Secret::new(rpassword::prompt_password_stdout("Passphrase: ")?);
     let mut storage = load_entries(&passphrase)?;
 
@@ -157,10 +199,14 @@ fn new_entry() -> Result<(), Error> {
         .entry(entry.to_owned())
         .or_insert(Entry { password });
 
-    save_entries(passphrase, &storage)
+    save_entries(passphrase, &storage)?;
+    run_hook(&Hook::PostSave, &HookEvent::NewEntry)?;
+
+    Ok(())
 }
 
 fn list() -> Result<(), Error> {
+    run_hook(&Hook::PreLoad, &HookEvent::ListEntries)?;
     let passphrase = Secret::new(rpassword::prompt_password_stdout("Enter passphrase:")?);
     let storage = load_entries(&passphrase)?;
     for name in storage.entries.keys() {
@@ -214,6 +260,7 @@ fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
 }
 
 fn show(entry: &str, on_screen: bool) -> Result<()> {
+    run_hook(&Hook::PreLoad, &HookEvent::ShowEntry)?;
     let passphrase = Secret::new(rpassword::prompt_password_stdout("Enter passphrase:")?);
     let storage = load_entries(&passphrase)?;
     if storage.entries.contains_key(entry) {
@@ -231,12 +278,50 @@ fn show(entry: &str, on_screen: bool) -> Result<()> {
 }
 
 fn info() -> Result<()> {
-    let path = entries_file()?;
-    if fs::metadata(path.clone()).is_ok() {
-        println!("Storage file: {}", path);
+    let storage_path = entries_file()?;
+    if fs::metadata(storage_path.clone()).is_ok() {
+        println!("Storage file: {}", storage_path);
     } else {
         println!("Storage file doesn't exist yet, run `passage init` to create it");
     }
+
+    let hooks_dir = hooks_dir()?;
+    if fs::metadata(&hooks_dir).is_ok() {
+        println!("Hooks directory: {}", hooks_dir);
+    } else {
+        println!("Hooks directory does not exist yet: {}", hooks_dir);
+    }
+    Ok(())
+}
+
+fn run_hook(hook: &Hook, event: &HookEvent) -> Result<()> {
+    let path = Path::new(&hooks_dir()?)
+        .join(hook.name())
+        .display()
+        .to_string();
+    if fs::metadata(&path).is_ok() {
+        println!("Running {} hook", hook.name());
+        let storage_dir = storage_dir()?;
+        let output = Command::new(path)
+            .args(&[event.name()])
+            .current_dir(storage_dir)
+            .output()?;
+
+        let stdout = String::from_utf8(output.stdout)?;
+        let stderr = String::from_utf8(output.stderr)?;
+
+        for line in stdout.lines() {
+            println!("{}: {}", hook.name(), line);
+        }
+        for line in stderr.lines() {
+            println!("{}: {}", hook.name(), line);
+        }
+
+        if !output.status.success() {
+            anyhow!("{} hook failed", hook.name());
+        }
+    }
+
     Ok(())
 }
 

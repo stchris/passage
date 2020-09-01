@@ -68,6 +68,23 @@ or
 $ passage show --on-screen email # the password is printed to the console
 ```
 
+## Hooks
+
+`passage` is able to call into [git-style hooks](https://git-scm.com/book/uz/v2/Customizing-Git-Git-Hooks) before or after certain events which affect the password database. A typical use case for hooks is if your password file is stored in version control and you want to automatically push / pull the changes when interacting with `passage`.
+
+To use hooks you need the respective folder, its path can be seen by running `passage info`. By convention you put executable scripts inside there named after the hook you want to react on. These scripts are called and passed the event which triggered the hook as the first argument.
+
+Existing hooks:
+* `pre_load` (called before the password database gets loaded)
+* `post_save` (called after an update to the password database)
+
+These commands trigger hooks:
+* `passage new` (`pre_load`, `post_save` with event name `new_entry`)
+* `passage list` (`pre_load` with event name `list_entries`)
+* `passage show` (`pre_load` with event name `show_entry`)
+
+Example hook scripts can be found [here](https://github.com/stchris/passage/tree/main/example_hooks).
+
 ## Usage
 
 ```bash

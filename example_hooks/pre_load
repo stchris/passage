@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+
+# possible events: new_entry, list_entries, show_entries
+# we will just act on list_entries here, so we don't hit
+# the network too much
+
+case "$1" in
+
+  list_entries)
+    git pull --autostash --rebase origin main
+    ;;
+
+  new_entry | show_entries)
+    echo "ignoring event $1"
+    ;;
+
+  *)
+    echo "ignoring unknown event $1"
+    ;;
+
+esac
