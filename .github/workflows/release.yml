@@ -24,7 +24,7 @@ jobs:
         uses: mindsers/changelog-reader-action@v1
         with:
           version: ${{ steps.tag_name.outputs.current_version }}
-          path: ./CHANGELOG.md
+          path: ./CHANGELOG
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
