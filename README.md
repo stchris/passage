@@ -89,7 +89,7 @@ Example hook scripts can be found [here](https://github.com/stchris/passage/tree
 
 ```bash
 $ passage
-passage 0.3.0
+passage 0.4.0
 Password manager with age encryption
 USAGE:
     passage <SUBCOMMAND>
