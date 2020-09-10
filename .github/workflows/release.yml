@@ -46,7 +46,7 @@ jobs:
         include:
           - name: linux
             os: ubuntu-latest
-            deps: sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+            deps: sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libdbus-1-dev
             archive_name: passage.tar.gz
             asset_suffix: x86_64-linux.tar.gz
 
@@ -116,7 +116,7 @@ jobs:
         include:
           - name: linux
             target: x86_64-unknown-linux-gnu
-            deps: sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+            deps: sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libdbus-1-dev
 
     steps:
       - uses: actions/checkout@v1

@@ -19,9 +19,11 @@ use anyhow::{anyhow, Error, Result};
 use clipboard::ClipboardContext;
 use clipboard::ClipboardProvider;
 use directories::ProjectDirs;
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 use structopt::StructOpt;
+
+const KEYRING_APP_NAME: &str = "passage";
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Storage {
@@ -85,6 +87,15 @@ enum Opt {
     },
     /// Display status information
     Info,
+    /// Keyring related commands
+    Keyring(KeyringOpt),
+}
+#[derive(Debug, StructOpt)]
+enum KeyringOpt {
+    /// Checks if the keyring integration works
+    Check,
+    /// Deletes the password from the keyring
+    Forget,
 }
 
 /// Returns the path to the storage folder containing the `entries_file`
@@ -173,7 +184,7 @@ fn save_entries(passphrase: Secret<String>, storage: &Storage) -> Result<()> {
 
 fn new_entry() -> Result<(), Error> {
     run_hook(&Hook::PreLoad, &HookEvent::NewEntry)?;
-    let passphrase = Secret::new(rpassword::prompt_password_stdout("Passphrase: ")?);
+    let passphrase = get_passphrase("Passphrase: ")?;
     let mut storage = load_entries(&passphrase)?;
 
     print!("New entry: ");
@@ -193,11 +204,10 @@ fn new_entry() -> Result<(), Error> {
         }
     }
 
-    let password = rpassword::prompt_password_stdout(format!("Password for {}: ", entry).as_ref())?;
-    storage
-        .entries
-        .entry(entry.to_owned())
-        .or_insert(Entry { password });
+    let password = get_passphrase(&format!("Password for {}", entry))?;
+    storage.entries.entry(entry.to_owned()).or_insert(Entry {
+        password: password.expose_secret().to_string(),
+    });
 
     save_entries(passphrase, &storage)?;
     run_hook(&Hook::PostSave, &HookEvent::NewEntry)?;
@@ -207,7 +217,8 @@ fn new_entry() -> Result<(), Error> {
 
 fn list() -> Result<(), Error> {
     run_hook(&Hook::PreLoad, &HookEvent::ListEntries)?;
-    let passphrase = Secret::new(rpassword::prompt_password_stdout("Enter passphrase:")?);
+
+    let passphrase = get_passphrase("Enter passphrase: ")?;
     let storage = load_entries(&passphrase)?;
     for name in storage.entries.keys() {
         println!("{}", name);
@@ -220,11 +231,30 @@ fn init() -> Result<(), Error> {
     let path = entries_file()?;
     if fs::metadata(path).is_err() {
         File::create(entries_file()?)?;
-        let passphrase = Secret::new(rpassword::prompt_password_stdout("Passphrase: ")?);
+        let passphrase = get_passphrase("Passphrase: ")?;
         let entries: Storage = toml::from_str("")?;
         save_entries(passphrase, &entries)?
     }
     Ok(())
+}
+
+/// Gets the passphrase from either the keyring or stdin (and stores it in the keyring)
+fn get_passphrase(prompt: &str) -> Result<Secret<String>> {
+    let username = &whoami::username();
+    let keyring = keyring::Keyring::new(KEYRING_APP_NAME, username);
+
+    let passphrase = if let Ok(pw) = keyring.get_password() {
+        Secret::new(pw)
+    } else {
+        let passphrase = rpassword::prompt_password_stdout(prompt)?;
+        if keyring.set_password(&passphrase).is_err() {
+            anyhow!("Failed to store password in keyring");
+        }
+
+        Secret::new(passphrase)
+    };
+
+    Ok(passphrase)
 }
 
 #[cfg(target_os = "linux")]
@@ -261,7 +291,7 @@ fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
 
 fn show(entry: &str, on_screen: bool) -> Result<()> {
     run_hook(&Hook::PreLoad, &HookEvent::ShowEntry)?;
-    let passphrase = Secret::new(rpassword::prompt_password_stdout("Enter passphrase:")?);
+    let passphrase = get_passphrase("Enter passphrase: ")?;
     let storage = load_entries(&passphrase)?;
     if storage.entries.contains_key(entry) {
         let password = &storage.entries.get(entry).unwrap().password;
@@ -325,6 +355,25 @@ fn run_hook(hook: &Hook, event: &HookEvent) -> Result<()> {
     Ok(())
 }
 
+fn keyring_check() -> Result<()> {
+    let username = &whoami::username();
+    let keyring = keyring::Keyring::new(KEYRING_APP_NAME, username);
+    if keyring.get_password().is_err() {
+        anyhow!("Failed to access password in keyring");
+    }
+    println!("Keyring integration seems fine");
+    Ok(())
+}
+
+fn keyring_forget() -> Result<()> {
+    let username = &whoami::username();
+    let keyring = keyring::Keyring::new(KEYRING_APP_NAME, username);
+    if keyring.delete_password().is_err() {
+        anyhow!("Failed to delete password from keyring");
+    }
+    Ok(())
+}
+
 fn main() -> Result<(), Error> {
     let opt = Opt::from_args();
     match opt {
@@ -333,6 +382,10 @@ fn main() -> Result<(), Error> {
         Opt::Init => init(),
         Opt::Show { entry, on_screen } => show(&entry, on_screen),
         Opt::Info => info(),
+        Opt::Keyring(ko) => match ko {
+            KeyringOpt::Check => keyring_check(),
+            KeyringOpt::Forget => keyring_forget(),
+        },
     }
 }
 
