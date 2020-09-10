@@ -22,7 +22,7 @@ With a rust toolchain present, you could do this (which makes sense if you want 
 $ git clone https://github.com/stchris/passage.git
 
 # Dependencies for Debian / Ubuntu
-$ apt install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+$ apt install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libdbus-1-dev
 
 $ cargo install --path .
 ```
@@ -85,12 +85,17 @@ These commands trigger hooks:
 
 Example hook scripts can be found [here](https://github.com/stchris/passage/tree/main/example_hooks).
 
+## Keyring integration
+
+If possible, `passage` will try to store the passphrase of your database into the OS keyring. You can run `passage keyring check` to see if this works. If you no longer want the password to be stored in the keyring run `passage keyring forget`.
+
 ## Usage
 
 ```bash
 $ passage
 passage 0.4.0
 Password manager with age encryption
+
 USAGE:
     passage <SUBCOMMAND>
 
@@ -99,10 +104,11 @@ FLAGS:
     -V, --version    Prints version information
 
 SUBCOMMANDS:
-    help    Prints this message or the help of the given subcommand(s)
-    info    Display status information
-    init    Initialize the password store
-    list    List all known entries
-    new     Add a new entry
-    show    Decrypt and show an entry
+    help       Prints this message or the help of the given subcommand(s)
+    info       Display status information
+    init       Initialize the password store
+    keyring    Keyring related commands
+    list       List all known entries
+    new        Add a new entry
+    show       Decrypt and show an entry
 ```
