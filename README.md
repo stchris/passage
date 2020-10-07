@@ -93,7 +93,7 @@ If possible, `passage` will try to store the passphrase of your database into th
 
 ```bash
 $ passage
-passage 0.4.0
+passage 0.5.0
 Password manager with age encryption
 
 USAGE:
