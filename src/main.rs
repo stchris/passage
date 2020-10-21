@@ -18,7 +18,7 @@ use std::{
 use anyhow::{anyhow, Error, Result};
 use clipboard::ClipboardContext;
 use clipboard::ClipboardProvider;
-use directories::ProjectDirs;
+use directories_next::ProjectDirs;
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 use structopt::StructOpt;
