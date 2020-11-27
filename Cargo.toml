@@ -15,7 +15,7 @@ categories = ["command-line-utilities", "cryptography"]
 [dependencies]
 age = "0.5"
 anyhow = "1.0"
-secrecy = "0.6"
+secrecy = "0.7"
 rpassword = "5.0"
 structopt = {version="0.3", features=["color"]}
 lazy_static = "1.4"
