@@ -129,7 +129,7 @@ fn encrypt(plaintext: &[u8], passphrase: Secret<String>) -> Result<Vec<u8>, Erro
     let encryptor = age::Encryptor::with_user_passphrase(passphrase);
 
     let mut encrypted = vec![];
-    let mut writer = encryptor.wrap_output(&mut encrypted, age::Format::Binary)?;
+    let mut writer = encryptor.wrap_output(&mut encrypted).map_err(Error::msg)?;
     writer.write_all(plaintext)?;
     writer.finish()?;
 
