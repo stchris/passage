@@ -204,10 +204,17 @@ fn new_entry() -> Result<(), Error> {
         }
     }
 
-    let password = get_passphrase(&format!("Password for {}", entry))?;
-    storage.entries.entry(entry.to_owned()).or_insert(Entry {
-        password: password.expose_secret().to_string(),
-    });
+    let password = Secret::new(rpassword::prompt_password_stdout(&format!(
+        "Password for {}: ",
+        entry
+    ))?);
+
+    storage.entries.insert(
+        entry.to_owned(),
+        Entry {
+            password: password.expose_secret().to_string(),
+        },
+    );
 
     save_entries(passphrase, &storage)?;
     run_hook(&Hook::PostSave, &HookEvent::NewEntry)?;
