@@ -236,7 +236,7 @@ fn new_entry(no_keyring: bool) -> Result<(), Error> {
 fn list(no_keyring: bool) -> Result<(), Error> {
     run_hook(&Hook::PreLoad, &HookEvent::ListEntries)?;
 
-    let passphrase = get_passphrase("Enter Passphrase: ", no_keyring)?;
+    let passphrase = get_passphrase("Enter passphrase: ", no_keyring)?;
     let storage = load_entries(&passphrase)?;
     for name in storage.entries.keys() {
         println!("{}", name);
