@@ -36,6 +36,7 @@ fn sanity() {
 
 #[test]
 fn info() {
+    remove_entries().unwrap_or_default();
     passage().arg("--no-keyring").arg("init").assert().success();
     passage().arg("info").assert().success().stdout(
         predicate::str::starts_with("Storage file: ").and(
@@ -43,6 +44,49 @@ fn info() {
                 .and(predicate::str::contains("\n").count(1).trim()),
         ),
     );
+}
+
+#[test]
+fn new_show_list() {
+    let passphrase = "master";
+    let entry = "entry";
+    let password = "password";
+
+    remove_entries().unwrap_or_default();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("init")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(predicate::str::starts_with("Passphrase: "))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("new")
+        .write_stdin(format!("{}\n{}\n{}", passphrase, entry, password))
+        .assert()
+        .stdout(format!("Passphrase: New entry: Password for {}: ", entry))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("list")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(format!("Enter passphrase: {}\n", entry))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("show")
+        .arg("--on-screen")
+        .arg(entry)
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(format!("Enter passphrase: {}\n", password))
+        .success();
 }
 
 #[test]
