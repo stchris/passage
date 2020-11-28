@@ -13,7 +13,7 @@ This project is in development, not ready for serious use. Things might break. T
 
 ### Binaries and packages (preferred)
 
-The [release page](https://github.com/stchris/passage/releases) includes binaries for Linux, mac OS and Windows as well as `deb` files for Debian / Ubuntu.
+The [release page](https://github.com/stchris/passage/releases) includes binaries for Linux, mac OS ~and Windows~ (last Release for Windows is `0.5.1`) as well as `deb` files for Debian / Ubuntu.
 
 ### Build from source (for development)
 With a rust toolchain present, you could do this (which makes sense if you want to contribute):

@@ -42,18 +42,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [linux, windows, macos]
+        name: [linux, macos]
         include:
           - name: linux
             os: ubuntu-latest
             deps: sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libdbus-1-dev
             archive_name: passage.tar.gz
             asset_suffix: x86_64-linux.tar.gz
-
-          - name: windows
-            os: windows-latest
-            archive_name: passage.zip
-            asset_suffix: x86_64-windows.zip
 
           - name: macos
             os: macos-latest
@@ -83,16 +78,6 @@ jobs:
           mv target/${{ matrix.target }}/release/passage* release/passage/
           rm release/passage/*.d
           tar czf ${{ matrix.archive_name }} -C release/ passage/
-        if: matrix.name != 'windows'
-
-      - name: Create archive [Windows]
-        run: |
-          mkdir -p release/passage
-          mv target/release/passage.exe release/passage/
-          cd release/
-          7z.exe a ../${{ matrix.archive_name }} passage/
-        shell: bash
-        if: matrix.name == 'windows'
 
       - name: Get the version
         id: get_version

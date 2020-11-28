@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Added a global flag to skip using the system keychain (`--no-keychain`)
 - Warn the user if the storage wasn't initialized yet (and prompt them to run `passage init`)
+- Remove Windows builds because integration tests fail and I have no means to debug this (https://github.com/stchris/passage/runs/1468067393?check_suite_focus=true)
 - cargo update 2020-11-28, directories-next==2.0.0
 
 ## [0.5.1] - 2020-11-28

@@ -16,8 +16,6 @@ jobs:
             deps: echo No dependencies to install
           - os: ubuntu-latest
             deps: sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libdbus-1-dev
-          - os: windows-latest
-            deps: echo No dependencies to install
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
