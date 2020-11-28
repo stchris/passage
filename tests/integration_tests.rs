@@ -49,6 +49,7 @@ fn info() {
 fn fail_list_no_init() {
     remove_entries().unwrap_or_default();
     passage()
+        .arg("--no-keyring")
         .arg("list")
         .assert()
         .failure()
@@ -61,6 +62,7 @@ fn fail_list_no_init() {
 fn fail_show_no_init() {
     remove_entries().unwrap_or_default();
     passage()
+        .arg("--no-keyring")
         .arg("show")
         .arg("foo")
         .assert()
@@ -74,6 +76,7 @@ fn fail_show_no_init() {
 fn fail_new_no_init() {
     remove_entries().unwrap_or_default();
     passage()
+        .arg("--no-keyring")
         .arg("new")
         .assert()
         .failure()
