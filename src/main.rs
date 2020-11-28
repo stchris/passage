@@ -70,7 +70,17 @@ impl HookEvent {
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "passage", about = "Password manager with age encryption")]
-enum Opt {
+struct Opt {
+    #[structopt(flatten)]
+    cmd: Cmd,
+
+    #[structopt(long, short)]
+    /// Disable the keyring integration
+    no_keyring: bool,
+}
+
+#[derive(Debug, StructOpt)]
+enum Cmd {
     /// Initialize the password store
     Init,
     /// Add a new entry
@@ -90,6 +100,7 @@ enum Opt {
     /// Keyring related commands
     Keyring(KeyringOpt),
 }
+
 #[derive(Debug, StructOpt)]
 enum KeyringOpt {
     /// Checks if the keyring integration works
@@ -182,9 +193,9 @@ fn save_entries(passphrase: Secret<String>, storage: &Storage) -> Result<()> {
     Ok(())
 }
 
-fn new_entry() -> Result<(), Error> {
+fn new_entry(no_keyring: bool) -> Result<(), Error> {
     run_hook(&Hook::PreLoad, &HookEvent::NewEntry)?;
-    let passphrase = get_passphrase("Passphrase: ")?;
+    let passphrase = get_passphrase("Passphrase: ", no_keyring)?;
     let mut storage = load_entries(&passphrase)?;
 
     print!("New entry: ");
@@ -222,10 +233,10 @@ fn new_entry() -> Result<(), Error> {
     Ok(())
 }
 
-fn list() -> Result<(), Error> {
+fn list(no_keyring: bool) -> Result<(), Error> {
     run_hook(&Hook::PreLoad, &HookEvent::ListEntries)?;
 
-    let passphrase = get_passphrase("Enter passphrase: ")?;
+    let passphrase = get_passphrase("Enter Passphrase: ", no_keyring)?;
     let storage = load_entries(&passphrase)?;
     for name in storage.entries.keys() {
         println!("{}", name);
@@ -233,20 +244,29 @@ fn list() -> Result<(), Error> {
     Ok(())
 }
 
-fn init() -> Result<(), Error> {
+fn init(no_keyring: bool) -> Result<(), Error> {
     fs::create_dir_all(storage_dir()?)?;
     let path = entries_file()?;
     if fs::metadata(path).is_err() {
         File::create(entries_file()?)?;
-        let passphrase = get_passphrase("Passphrase: ")?;
+        let passphrase = get_passphrase("Passphrase: ", no_keyring)?;
         let entries: Storage = toml::from_str("")?;
         save_entries(passphrase, &entries)?
     }
     Ok(())
 }
 
+fn get_passphrase(prompt: &str, no_keyring: bool) -> Result<Secret<String>> {
+    if no_keyring {
+        let passphrase = rpassword::prompt_password_stdout(prompt)?;
+        Ok(Secret::new(passphrase))
+    } else {
+        get_passphrase_keyring(prompt)
+    }
+}
+
 /// Gets the passphrase from either the keyring or stdin (and stores it in the keyring)
-fn get_passphrase(prompt: &str) -> Result<Secret<String>> {
+fn get_passphrase_keyring(prompt: &str) -> Result<Secret<String>> {
     let username = &whoami::username();
     let keyring = keyring::Keyring::new(KEYRING_APP_NAME, username);
 
@@ -296,9 +316,9 @@ fn copy_to_clipbpard(decrypted: String) -> Result<(), Error> {
     Ok(())
 }
 
-fn show(entry: &str, on_screen: bool) -> Result<()> {
+fn show(entry: &str, on_screen: bool, no_keyring: bool) -> Result<()> {
     run_hook(&Hook::PreLoad, &HookEvent::ShowEntry)?;
-    let passphrase = get_passphrase("Enter passphrase: ")?;
+    let passphrase = get_passphrase("Enter passphrase: ", no_keyring)?;
     let storage = load_entries(&passphrase)?;
     if storage.entries.contains_key(entry) {
         let password = &storage.entries.get(entry).unwrap().password;
@@ -383,13 +403,13 @@ fn keyring_forget() -> Result<()> {
 
 fn main() -> Result<(), Error> {
     let opt = Opt::from_args();
-    match opt {
-        Opt::New => new_entry(),
-        Opt::List => list(),
-        Opt::Init => init(),
-        Opt::Show { entry, on_screen } => show(&entry, on_screen),
-        Opt::Info => info(),
-        Opt::Keyring(ko) => match ko {
+    match opt.cmd {
+        Cmd::New => new_entry(opt.no_keyring),
+        Cmd::List => list(opt.no_keyring),
+        Cmd::Init => init(opt.no_keyring),
+        Cmd::Show { entry, on_screen } => show(&entry, on_screen, opt.no_keyring),
+        Cmd::Info => info(),
+        Cmd::Keyring(ko) => match ko {
             KeyringOpt::Check => keyring_check(),
             KeyringOpt::Forget => keyring_forget(),
         },

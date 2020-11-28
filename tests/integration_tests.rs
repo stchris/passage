@@ -26,7 +26,7 @@ fn sanity() {
 
 #[test]
 fn info() {
-    passage().arg("init").assert().success();
+    passage().arg("--no-keyring").arg("init").assert().success();
     passage().arg("info").assert().success().stdout(
         predicate::str::starts_with("Storage file: ").and(
             predicate::str::contains("entries.toml.age")
