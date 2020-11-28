@@ -29,3 +29,7 @@ whoami = "1.0"
 
 [target.'cfg(unix)'.dependencies]
 fork = "0.1"
+
+[dev-dependencies]
+assert_cmd = "1.0"
+predicates = "1.0"
