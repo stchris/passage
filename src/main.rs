@@ -169,7 +169,7 @@ fn load_entries(passphrase: &Secret<String>) -> Result<Storage> {
     let mut encrypted: Vec<u8> = vec![];
     let file = match fs::metadata(entries_file()?) {
         Ok(_) => File::open(entries_file()?)?,
-        Err(_) => File::create(entries_file()?)?,
+        Err(_) => return Err(anyhow!("storage not initialized, run `passage init`")),
     };
     let mut buf = BufReader::new(file);
     buf.read_to_end(&mut encrypted)?;
