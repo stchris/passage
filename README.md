@@ -93,15 +93,15 @@ If possible, `passage` will try to store the passphrase of your database into th
 
 ```bash
 $ passage
-passage 0.5.0
 Password manager with age encryption
 
 USAGE:
-    passage <SUBCOMMAND>
+    passage [FLAGS] <SUBCOMMAND>
 
 FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
+    -h, --help          Prints help information
+    -n, --no-keyring    Disable the keyring integration
+    -V, --version       Prints version information
 
 SUBCOMMANDS:
     help       Prints this message or the help of the given subcommand(s)
