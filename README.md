@@ -89,6 +89,8 @@ Example hook scripts can be found [here](https://github.com/stchris/passage/tree
 
 If possible, `passage` will try to store the passphrase of your database into the OS keyring. You can run `passage keyring check` to see if this works. If you no longer want the password to be stored in the keyring run `passage keyring forget`.
 
+To skip the keyring integration, `passage` takes a global flag `--no-keyring`.
+
 ## Usage
 
 ```bash
