@@ -83,6 +83,7 @@ These commands trigger hooks:
 * `passage list` (`pre_load` with event name `list_entries`)
 * `passage show` (`pre_load` with event name `show_entry`)
 * `passage edit` (`post_save` with event name `edit_entry`)
+* `passage remove` (`post_save` with event name `remove_entry`)
 
 Example hook scripts can be found [here](https://github.com/stchris/passage/tree/main/example_hooks).
 
@@ -114,5 +115,6 @@ SUBCOMMANDS:
     keyring    Keyring related commands
     list       List all known entries
     new        Add a new entry
+    remove     Remove an entry
     show       Decrypt and show an entry
 ```

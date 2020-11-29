@@ -57,6 +57,7 @@ enum HookEvent {
     ListEntries,
     ShowEntry,
     EditEntry,
+    RemoveEntry,
 }
 
 impl HookEvent {
@@ -66,6 +67,7 @@ impl HookEvent {
             Self::ListEntries => "list_entries".to_string(),
             Self::ShowEntry => "show_entry".to_string(),
             Self::EditEntry => "edit_entry".to_string(),
+            Self::RemoveEntry => "remove_entry".to_string(),
         }
     }
 }
@@ -99,6 +101,8 @@ enum Cmd {
     },
     /// Edit an entry
     Edit { entry: String },
+    /// Remove an entry
+    Remove { entry: String },
     /// Display status information
     Info,
     /// Keyring related commands
@@ -354,6 +358,20 @@ fn edit(entry: &str, no_keyring: bool) -> Result<()> {
     Ok(())
 }
 
+fn remove(entry: &str, no_keyring: bool) -> Result<()> {
+    run_hook(&Hook::PreLoad, &HookEvent::ShowEntry)?;
+    let passphrase = get_passphrase("Enter passphrase: ", no_keyring)?;
+    let mut storage = load_entries(&passphrase)?;
+    if storage.entries.remove(entry).is_some() {
+        save_entries(passphrase, &storage)?;
+        run_hook(&Hook::PostSave, &HookEvent::RemoveEntry)?;
+    } else {
+        return Err(anyhow!("entry not found: {}", entry));
+    };
+
+    Ok(())
+}
+
 fn info() -> Result<()> {
     let storage_path = entries_file()?;
     if fs::metadata(storage_path.clone()).is_ok() {
@@ -429,6 +447,7 @@ fn main() -> Result<(), Error> {
         Cmd::Init => init(opt.no_keyring),
         Cmd::Show { entry, on_screen } => show(&entry, on_screen, opt.no_keyring),
         Cmd::Edit { entry } => edit(&entry, opt.no_keyring),
+        Cmd::Remove { entry } => remove(&entry, opt.no_keyring),
         Cmd::Info => info(),
         Cmd::Keyring(ko) => match ko {
             KeyringOpt::Check => keyring_check(),

@@ -145,6 +145,56 @@ fn edit_entry() {
 }
 
 #[test]
+fn remove_entry() {
+    let passphrase = "donttell";
+    let entry = "begone";
+    let password = "pw";
+
+    remove_entries().unwrap_or_default();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("init")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(predicate::str::starts_with("Passphrase: "))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("new")
+        .write_stdin(format!("{}\n{}\n{}", passphrase, entry, password))
+        .assert()
+        .stdout(format!("Passphrase: New entry: Password for {}: ", entry))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("list")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(format!("Enter passphrase: {}\n", entry))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("remove")
+        .arg(entry)
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout("Enter passphrase: ")
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("list")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout("Enter passphrase: ")
+        .success();
+}
+
+#[test]
 fn fail_list_no_init() {
     remove_entries().unwrap_or_default();
     passage()
@@ -206,4 +256,28 @@ fn fail_edit_no_entry() {
         .failure()
         .stdout("Enter passphrase: ")
         .stderr("Error: entry not found: 404\n");
+}
+
+#[test]
+fn fail_remove_no_entry() {
+    let passphrase = "no_entry_no_remove";
+    remove_entries().unwrap_or_default();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("init")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(predicate::str::starts_with("Passphrase: "))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("remove")
+        .arg("no-entry")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .failure()
+        .stdout("Enter passphrase: ")
+        .stderr("Error: entry not found: no-entry\n");
 }

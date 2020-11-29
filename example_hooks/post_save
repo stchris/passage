@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# possible event: new_entry
+# possible event: new_entry, edit_entry, remove_entry
 
 git commit -m "updated entry" entries.toml.age
 git push origin main
