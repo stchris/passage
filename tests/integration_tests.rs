@@ -90,6 +90,61 @@ fn new_show_list() {
 }
 
 #[test]
+fn edit_entry() {
+    let passphrase = "secret";
+    let entry = "editable";
+    let password = "password";
+    let new_password = "password2";
+
+    remove_entries().unwrap_or_default();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("init")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(predicate::str::starts_with("Passphrase: "))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("new")
+        .write_stdin(format!("{}\n{}\n{}", passphrase, entry, password))
+        .assert()
+        .stdout(format!("Passphrase: New entry: Password for {}: ", entry))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("show")
+        .arg("--on-screen")
+        .arg(entry)
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(format!("Enter passphrase: {}\n", password))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("edit")
+        .arg(entry)
+        .write_stdin(format!("{}\n{}\n", passphrase, new_password))
+        .assert()
+        .stdout("Enter passphrase: New password for editable: ")
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("show")
+        .arg("--on-screen")
+        .arg(entry)
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(format!("Enter passphrase: {}\n", new_password))
+        .success();
+}
+
+#[test]
 fn fail_list_no_init() {
     remove_entries().unwrap_or_default();
     passage()
