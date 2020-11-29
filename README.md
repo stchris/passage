@@ -82,6 +82,7 @@ These commands trigger hooks:
 * `passage new` (`pre_load`, `post_save` with event name `new_entry`)
 * `passage list` (`pre_load` with event name `list_entries`)
 * `passage show` (`pre_load` with event name `show_entry`)
+* `passage edit` (`post_save` with event name `edit_entry`)
 
 Example hook scripts can be found [here](https://github.com/stchris/passage/tree/main/example_hooks).
 
@@ -106,6 +107,7 @@ FLAGS:
     -V, --version       Prints version information
 
 SUBCOMMANDS:
+    edit       Edit an entry
     help       Prints this message or the help of the given subcommand(s)
     info       Display status information
     init       Initialize the password store

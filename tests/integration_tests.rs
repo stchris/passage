@@ -128,3 +128,27 @@ fn fail_new_no_init() {
             "Error: storage not initialized, run `passage init`",
         ));
 }
+
+#[test]
+fn fail_edit_no_entry() {
+    let passphrase = "fail";
+    remove_entries().unwrap_or_default();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("init")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .stdout(predicate::str::starts_with("Passphrase: "))
+        .success();
+
+    passage()
+        .arg("--no-keyring")
+        .arg("edit")
+        .arg("404")
+        .write_stdin(format!("{}\n", passphrase))
+        .assert()
+        .failure()
+        .stdout("Enter passphrase: ")
+        .stderr("Error: entry not found: 404\n");
+}
