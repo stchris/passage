@@ -955,7 +955,7 @@ dependencies = [
 
 [[package]]
 name = "passage"
-version = "0.6.1-alpha.0"
+version = "0.7.0"
 dependencies = [
  "age",
  "anyhow",
