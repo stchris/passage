@@ -5,10 +5,6 @@ password manager with [age encryption](https://age-encryption.org/)
 [![Build status](https://github.com/stchris/passage/workflows/Tests%20&%20Clippy/badge.svg)](https://github.com/stchris/passage/actions)
 [![Crates.io](https://img.shields.io/crates/v/passage.svg)](https://crates.io/crates/passage)
 
-## Use with care
-
-This project is in development, not ready for serious use. Things might break. That being said, please use it and report any issues.
-
 ## Installation
 
 ### Binaries and packages (preferred)
