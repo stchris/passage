@@ -119,12 +119,15 @@ enum KeyringOpt {
 
 /// Returns the path to the storage folder containing the `entries_file`
 fn storage_dir() -> Result<String> {
-    match ProjectDirs::from("", "", "passage") {
-        Some(pd) => {
-            let dir = pd.data_dir().display().to_string();
-            Ok(dir)
-        }
-        None => Err(anyhow!("couldn't determine project storage folder")),
+    match std::env::var("PASSAGE_STORAGE_FOLDER") {
+        Ok(f) => Ok(f),
+        Err(_) => match ProjectDirs::from("", "", "passage") {
+            Some(pd) => {
+                let dir = pd.data_dir().display().to_string();
+                Ok(dir)
+            }
+            None => Err(anyhow!("couldn't determine project storage folder")),
+        },
     }
 }
 

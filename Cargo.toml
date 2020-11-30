@@ -33,3 +33,4 @@ fork = "0.1"
 [dev-dependencies]
 assert_cmd = "1.0"
 predicates = "1.0"
+tempdir = "0.3"

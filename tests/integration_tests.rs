@@ -1,4 +1,3 @@
-use anyhow::Result;
 use assert_cmd::Command;
 use predicates::prelude::*;
 
@@ -6,13 +5,8 @@ fn passage() -> Command {
     Command::cargo_bin("passage").unwrap()
 }
 
-/// removes the storage file so we can start clean
-fn remove_entries() -> Result<()> {
-    let stdout = String::from_utf8(passage().arg("info").output()?.stdout)?;
-    let first_line = stdout.lines().next().unwrap();
-    let storage_file = first_line.split(':').last().unwrap().trim();
-    std::fs::remove_file(storage_file)?;
-    Ok(())
+fn tempdir() -> tempdir::TempDir {
+    tempdir::TempDir::new("passage").unwrap()
 }
 
 #[test]
@@ -36,25 +30,60 @@ fn sanity() {
 
 #[test]
 fn info() {
-    remove_entries().unwrap_or_default();
-    passage().arg("--no-keyring").arg("init").assert().success();
-    passage().arg("info").assert().success().stdout(
-        predicate::str::starts_with("Storage file: ").and(
-            predicate::str::contains("entries.toml.age")
-                .and(predicate::str::contains("\n").count(1).trim()),
-        ),
-    );
+    let dir = tempdir();
+
+    passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
+        .arg("--no-keyring")
+        .arg("init")
+        .assert()
+        .success();
+
+    passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
+        .arg("info")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::starts_with("Storage file: ").and(
+                predicate::str::contains("entries.toml.age")
+                    .and(predicate::str::contains("\n").count(1).trim()),
+            ),
+        );
+}
+
+#[test]
+fn switch_storage_folder() {
+    let dir = tempdir();
+
+    passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
+        .arg("--no-keyring")
+        .arg("init")
+        .assert()
+        .success();
+
+    passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
+        .arg("--no-keyring")
+        .arg("info")
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(format!(
+            "Storage file: {}/entries.toml.age\n",
+            dir.path().to_str().unwrap()
+        )));
 }
 
 #[test]
 fn new_show_list() {
+    let dir = tempdir();
     let passphrase = "master";
     let entry = "entry";
     let password = "password";
 
-    remove_entries().unwrap_or_default();
-
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("init")
         .write_stdin(format!("{}\n", passphrase))
@@ -63,6 +92,7 @@ fn new_show_list() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("new")
         .write_stdin(format!("{}\n{}\n{}", passphrase, entry, password))
@@ -71,6 +101,7 @@ fn new_show_list() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("list")
         .write_stdin(format!("{}\n", passphrase))
@@ -79,6 +110,7 @@ fn new_show_list() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("show")
         .arg("--on-screen")
@@ -91,14 +123,14 @@ fn new_show_list() {
 
 #[test]
 fn edit_entry() {
+    let dir = tempdir();
     let passphrase = "secret";
     let entry = "editable";
     let password = "password";
     let new_password = "password2";
 
-    remove_entries().unwrap_or_default();
-
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("init")
         .write_stdin(format!("{}\n", passphrase))
@@ -107,6 +139,7 @@ fn edit_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("new")
         .write_stdin(format!("{}\n{}\n{}", passphrase, entry, password))
@@ -115,6 +148,7 @@ fn edit_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("show")
         .arg("--on-screen")
@@ -125,6 +159,7 @@ fn edit_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("edit")
         .arg(entry)
@@ -134,6 +169,7 @@ fn edit_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("show")
         .arg("--on-screen")
@@ -146,13 +182,13 @@ fn edit_entry() {
 
 #[test]
 fn remove_entry() {
+    let dir = tempdir();
     let passphrase = "donttell";
     let entry = "begone";
     let password = "pw";
 
-    remove_entries().unwrap_or_default();
-
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("init")
         .write_stdin(format!("{}\n", passphrase))
@@ -161,6 +197,7 @@ fn remove_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("new")
         .write_stdin(format!("{}\n{}\n{}", passphrase, entry, password))
@@ -169,6 +206,7 @@ fn remove_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("list")
         .write_stdin(format!("{}\n", passphrase))
@@ -177,6 +215,7 @@ fn remove_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("remove")
         .arg(entry)
@@ -186,6 +225,7 @@ fn remove_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("list")
         .write_stdin(format!("{}\n", passphrase))
@@ -196,8 +236,9 @@ fn remove_entry() {
 
 #[test]
 fn fail_list_no_init() {
-    remove_entries().unwrap_or_default();
+    let dir = tempdir();
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("list")
         .assert()
@@ -209,8 +250,9 @@ fn fail_list_no_init() {
 
 #[test]
 fn fail_show_no_init() {
-    remove_entries().unwrap_or_default();
+    let dir = tempdir();
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("show")
         .arg("foo")
@@ -223,8 +265,9 @@ fn fail_show_no_init() {
 
 #[test]
 fn fail_new_no_init() {
-    remove_entries().unwrap_or_default();
+    let dir = tempdir();
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("new")
         .assert()
@@ -236,10 +279,11 @@ fn fail_new_no_init() {
 
 #[test]
 fn fail_edit_no_entry() {
+    let dir = tempdir();
     let passphrase = "fail";
-    remove_entries().unwrap_or_default();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("init")
         .write_stdin(format!("{}\n", passphrase))
@@ -248,6 +292,7 @@ fn fail_edit_no_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("edit")
         .arg("404")
@@ -260,10 +305,11 @@ fn fail_edit_no_entry() {
 
 #[test]
 fn fail_remove_no_entry() {
+    let dir = tempdir();
     let passphrase = "no_entry_no_remove";
-    remove_entries().unwrap_or_default();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("init")
         .write_stdin(format!("{}\n", passphrase))
@@ -272,6 +318,7 @@ fn fail_remove_no_entry() {
         .success();
 
     passage()
+        .env("PASSAGE_STORAGE_FOLDER", dir.path())
         .arg("--no-keyring")
         .arg("remove")
         .arg("no-entry")
