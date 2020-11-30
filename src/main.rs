@@ -332,7 +332,11 @@ fn show(entry: &str, on_screen: bool, no_keyring: bool) -> Result<()> {
     let passphrase = get_passphrase("Enter passphrase: ", no_keyring)?;
     let storage = load_entries(&passphrase)?;
     if storage.entries.contains_key(entry) {
-        let password = &storage.entries.get(entry).unwrap().password;
+        let password = &storage
+            .entries
+            .get(entry)
+            .ok_or_else(|| anyhow!("entry {} not found", entry))?
+            .password;
         if on_screen {
             println!("{}", password);
         } else {

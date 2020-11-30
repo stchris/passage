@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The environment variable `PASSAGE_STORAGE_FOLDER` can override the default storage folder
 
 ### Changed
+- improved error handling in edge case in show command
 - cargo update 2020-11-30
 
 ## [0.7.1] - 2020-11-29
