@@ -5,8 +5,8 @@ fn passage() -> Command {
     Command::cargo_bin("passage").unwrap()
 }
 
-fn tempdir() -> tempdir::TempDir {
-    tempdir::TempDir::new("passage").unwrap()
+fn tempdir() -> tempfile::TempDir {
+    tempfile::tempdir().unwrap()
 }
 
 #[test]
