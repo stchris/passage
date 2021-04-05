@@ -1,3 +1,5 @@
+> :warning: **No longer maintained**: This project was an excuse for me to do write a proper CLI tool in Rust and I no longer have the time to maintain it, especially looking at the ever growing list of security advisories, updates and releases needed. Should anyone maintain a fork to this repo please let me know if you want me to directly mention it here.
+
 # passage
 
 password manager with [age encryption](https://age-encryption.org/)
